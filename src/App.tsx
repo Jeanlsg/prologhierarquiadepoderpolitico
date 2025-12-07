@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { User, Heart, Code, Copy, Check, TreeDeciduous, Map } from 'lucide-react';
+import { User, Heart, Code, Copy, Check, TreeDeciduous, Map, Crown } from 'lucide-react';
 
 // --- DATA TYPES & STRUCTURE ---
 
@@ -25,6 +25,12 @@ type RegionNode = {
     type: 'Federal' | 'Estadual' | 'Municipal';
     occupants: Person[];
     children?: RegionNode[];
+};
+
+type PowerLevel = {
+    level: number;
+    roles: string[];
+    description: string;
 };
 
 // --- MOCKED DATA FROM PROLOG ---
@@ -159,6 +165,21 @@ const regionalTree: RegionNode = {
         }
     ]
 };
+
+
+// --- POWER STRUCTURE DATA ---
+// Derived from: poder(Cargo, Valor).
+const powerStructure: PowerLevel[] = [
+    { level: 10, roles: ['Presidente'], description: 'Chefe de Estado e Governo Federal' },
+    { level: 9, roles: ['Vice-Presidente'], description: 'Sucessor imediato do Presidente' },
+    { level: 8, roles: ['Senador'], description: 'Legislativo Federal (Câmara Alta)' },
+    { level: 7, roles: ['Deputado Federal'], description: 'Legislativo Federal (Câmara Baixa)' },
+    { level: 6, roles: ['Governador'], description: 'Chefe do Executivo Estadual' },
+    { level: 5, roles: ['Vice-Governador', 'Deputado Estadual'], description: 'Executivo e Legislativo Estadual' },
+    { level: 4, roles: ['Prefeito'], description: 'Chefe do Executivo Municipal' },
+    { level: 3, roles: ['Vice-Prefeito', 'Vereador'], description: 'Executivo e Legislativo Municipal' },
+    { level: 1, roles: ['Cidadão'], description: 'Base da Sociedade Civil' },
+];
 
 
 const prologCode = `% --- Fatos de Poder ---
@@ -595,6 +616,39 @@ const RegionTreeNode = ({ node }: { node: RegionNode }) => {
     );
 };
 
+// --- POWER HIERARCHY COMPONENT ---
+
+const PowerHierarchyView = () => {
+    return (
+        <div className="flex flex-col items-center gap-6 py-8 px-4">
+            {powerStructure.map((l) => (
+                <div key={l.level} className="w-full max-w-3xl flex items-center gap-6 group">
+                    {/* Level Indicator */}
+                    <div className="w-20 h-20 rounded-2xl bg-slate-800 text-white flex flex-col items-center justify-center shadow-lg border-4 border-slate-200 shrink-0 relative overflow-hidden group-hover:scale-110 transition-transform">
+                        <span className="text-xs font-semibold text-slate-400 uppercase">Poder</span>
+                        <span className="text-3xl font-black">{l.level}</span>
+                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-purple-500 opacity-50"></div>
+                    </div>
+
+                    {/* Roles Row */}
+                    <div className="flex-1 flex flex-col justify-center p-5 bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow relative">
+                        <div className="flex flex-wrap gap-3 mb-2">
+                            {l.roles.map(role => (
+                                <div key={role} className="px-4 py-1.5 bg-slate-100 rounded-md border border-slate-200 font-bold text-slate-700 text-sm uppercase tracking-wide">
+                                    {role}
+                                </div>
+                            ))}
+                        </div>
+                        <span className="text-xs text-slate-400 font-medium italic border-t border-slate-100 pt-2 block w-full">
+                            {l.description}
+                        </span>
+                    </div>
+                </div>
+            ))}
+        </div>
+    )
+}
+
 // --- PROLOG VIEWER COMPONENT ---
 
 const PrologViewer = ({ code, title }: { code: string; title: string }) => {
@@ -632,7 +686,7 @@ const PrologViewer = ({ code, title }: { code: string; title: string }) => {
 
 export default function FamilyTreeApp() {
     const [activeTab, setActiveTab] = useState<'silva' | 'oliveira' | 'santos'>('silva');
-    const [viewMode, setViewMode] = useState<'visual' | 'regional' | 'code'>('visual');
+    const [viewMode, setViewMode] = useState<'visual' | 'regional' | 'power' | 'code'>('visual');
 
     return (
         <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-800">
@@ -660,6 +714,14 @@ export default function FamilyTreeApp() {
                         >
                             <Map size={16} />
                             Hierarquia Regional
+                        </button>
+                        <button
+                            onClick={() => setViewMode('power')}
+                            className={`flex items-center gap-2 px-6 py-2 rounded-full text-sm font-bold transition-all ${viewMode === 'power' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-500 hover:bg-slate-100'
+                                }`}
+                        >
+                            <Crown size={16} />
+                            Estrutura de Poder
                         </button>
                         <button
                             onClick={() => setViewMode('code')}
@@ -716,6 +778,14 @@ export default function FamilyTreeApp() {
                     <div className="bg-white rounded-3xl shadow-xl border border-slate-100 p-8 md:p-16 overflow-x-auto min-h-[600px]">
                         <div className="min-w-max mx-auto transform scale-100 origin-top flex justify-center">
                             <RegionTreeNode node={regionalTree} />
+                        </div>
+                    </div>
+                )}
+
+                {viewMode === 'power' && (
+                    <div className="bg-white rounded-3xl shadow-xl border border-slate-100 p-8 md:p-16 overflow-x-auto min-h-[600px]">
+                        <div className="min-w-max mx-auto transform scale-100 origin-top flex justify-center">
+                            <PowerHierarchyView />
                         </div>
                     </div>
                 )}
